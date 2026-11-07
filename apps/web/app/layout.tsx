@@ -13,15 +13,11 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Streamyst",
-  description: "Media Forwarding",
+  title: "Linux Fleet | Infrastructure visibility",
+  description: "Monitor, manage and understand your Linux fleet.",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className="dark">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
@@ -30,3 +26,4 @@ export default function RootLayout({
     </html>
   );
 }
+

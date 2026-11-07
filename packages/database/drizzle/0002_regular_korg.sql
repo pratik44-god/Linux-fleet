@@ -1,0 +1,2 @@
+ALTER TABLE "fleet_nodes" ADD COLUMN "node_credential_hash" varchar(64) NOT NULL;--> statement-breakpoint
+ALTER TABLE "fleet_nodes" ADD CONSTRAINT "fleet_nodes_node_credential_hash_unique" UNIQUE("node_credential_hash");
