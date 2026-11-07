@@ -109,170 +109,170 @@ app.get("/metrics", async (_req, res) => {
 // This endpoint reads historical samples from Prometheus.
 // --------------------------------------------------
 
-app.get("/api/fleet/metrics/range", async (req, res) => {
-  try {
-    const metricParam = req.query.metric;
-    const userIdParam = req.query.user_id;
+// app.get("/api/fleet/metrics/range", async (req, res) => {
+//   try {
+//     const metricParam = req.query.metric;
+//     const userIdParam = req.query.user_id;
 
-    if (
-      typeof metricParam !== "string" ||
-      !Object.prototype.hasOwnProperty.call(
-        ALLOWED_FLEET_METRICS,
-        metricParam,
-      )
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid metric. Use cpu, memory, battery, or lastReport.",
-      });
-    }
+//     if (
+//       typeof metricParam !== "string" ||
+//       !Object.prototype.hasOwnProperty.call(
+//         ALLOWED_FLEET_METRICS,
+//         metricParam,
+//       )
+//     ) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Invalid metric. Use cpu, memory, battery, or lastReport.",
+//       });
+//     }
 
-    if (
-      typeof userIdParam !== "string" ||
-      !userIdParam.trim()
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "user_id is required.",
-      });
-    }
+//     if (
+//       typeof userIdParam !== "string" ||
+//       !userIdParam.trim()
+//     ) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "user_id is required.",
+//       });
+//     }
 
-    const metricKey = metricParam as FleetMetricKey;
-    const metricName = ALLOWED_FLEET_METRICS[metricKey];
+//     const metricKey = metricParam as FleetMetricKey;
+//     const metricName = ALLOWED_FLEET_METRICS[metricKey];
 
-    const nowSeconds = Math.floor(Date.now() / 1000);
+//     const nowSeconds = Math.floor(Date.now() / 1000);
 
-    const parseTimestamp = (
-      value: unknown,
-      fallback: number,
-    ): number => {
-      if (typeof value !== "string" || value.trim() === "") {
-        return fallback;
-      }
+//     const parseTimestamp = (
+//       value: unknown,
+//       fallback: number,
+//     ): number => {
+//       if (typeof value !== "string" || value.trim() === "") {
+//         return fallback;
+//       }
 
-      const parsed = Number(value);
+//       const parsed = Number(value);
 
-      return Number.isFinite(parsed) ? parsed : fallback;
-    };
+//       return Number.isFinite(parsed) ? parsed : fallback;
+//     };
 
-    const end = parseTimestamp(
-      req.query.end,
-      nowSeconds,
-    );
+//     const end = parseTimestamp(
+//       req.query.end,
+//       nowSeconds,
+//     );
 
-    const start = parseTimestamp(
-      req.query.start,
-      end - PROMETHEUS_RANGE_SECONDS,
-    );
+//     const start = parseTimestamp(
+//       req.query.start,
+//       end - PROMETHEUS_RANGE_SECONDS,
+//     );
 
-    const requestedStep = parseTimestamp(
-      req.query.step,
-      PROMETHEUS_STEP_SECONDS,
-    );
+//     const requestedStep = parseTimestamp(
+//       req.query.step,
+//       PROMETHEUS_STEP_SECONDS,
+//     );
 
-    if (start >= end) {
-      return res.status(400).json({
-        success: false,
-        message: "start must be earlier than end.",
-      });
-    }
+//     if (start >= end) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "start must be earlier than end.",
+//       });
+//     }
 
-    const step = Math.min(
-      Math.max(Math.floor(requestedStep), 5),
-      300,
-    );
+//     const step = Math.min(
+//       Math.max(Math.floor(requestedStep), 5),
+//       300,
+//     );
 
-    // Escape the label value before inserting it into PromQL.
-    const escapedUserId = userIdParam
-      .replace(/\\/g, "\\\\")
-      .replace(/"/g, '\\"')
-      .replace(/\n/g, "");
+//     // Escape the label value before inserting it into PromQL.
+//     const escapedUserId = userIdParam
+//       .replace(/\\/g, "\\\\")
+//       .replace(/"/g, '\\"')
+//       .replace(/\n/g, "");
 
-    const query =
-      `${metricName}{user_id="${escapedUserId}"}`;
+//     const query =
+//       `${metricName}{user_id="${escapedUserId}"}`;
 
-    const prometheusUrl = new URL(
-      "/api/v1/query_range",
-      PROMETHEUS_URL,
-    );
+//     const prometheusUrl = new URL(
+//       "/api/v1/query_range",
+//       PROMETHEUS_URL,
+//     );
 
-    prometheusUrl.searchParams.set("query", query);
-    prometheusUrl.searchParams.set("start", String(start));
-    prometheusUrl.searchParams.set("end", String(end));
-    prometheusUrl.searchParams.set("step", String(step));
+//     prometheusUrl.searchParams.set("query", query);
+//     prometheusUrl.searchParams.set("start", String(start));
+//     prometheusUrl.searchParams.set("end", String(end));
+//     prometheusUrl.searchParams.set("step", String(step));
 
-    const prometheusResponse = await fetch(
-      prometheusUrl.toString(),
-      {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-        },
-        signal: AbortSignal.timeout(10_000),
-      },
-    );
+//     const prometheusResponse = await fetch(
+//       prometheusUrl.toString(),
+//       {
+//         method: "GET",
+//         headers: {
+//           Accept: "application/json",
+//         },
+//         signal: AbortSignal.timeout(10_000),
+//       },
+//     );
 
-    if (!prometheusResponse.ok) {
-      logger.error(
-        "Prometheus range query failed",
-        {
-          status: prometheusResponse.status,
-          metric: metricKey,
-        },
-      );
+//     if (!prometheusResponse.ok) {
+//       logger.error(
+//         "Prometheus range query failed",
+//         {
+//           status: prometheusResponse.status,
+//           metric: metricKey,
+//         },
+//       );
 
-      return res.status(502).json({
-        success: false,
-        message: "Prometheus query failed.",
-      });
-    }
+//       return res.status(502).json({
+//         success: false,
+//         message: "Prometheus query failed.",
+//       });
+//     }
 
-    const prometheusData =
-      (await prometheusResponse.json()) as {
-        status?: string;
-        error?: string;
-        data?: {
-          resultType?: string;
-          result?: Array<{
-            metric?: Record<string, string>;
-            values?: Array<[number, string]>;
-          }>;
-        };
-      };
+//     const prometheusData =
+//       (await prometheusResponse.json()) as {
+//         status?: string;
+//         error?: string;
+//         data?: {
+//           resultType?: string;
+//           result?: Array<{
+//             metric?: Record<string, string>;
+//             values?: Array<[number, string]>;
+//           }>;
+//         };
+//       };
 
-    if (prometheusData.status !== "success") {
-      logger.error(
-        "Prometheus returned an unsuccessful query",
-        prometheusData.error,
-      );
+//     if (prometheusData.status !== "success") {
+//       logger.error(
+//         "Prometheus returned an unsuccessful query",
+//         prometheusData.error,
+//       );
 
-      return res.status(502).json({
-        success: false,
-        message: "Prometheus returned an unsuccessful query.",
-      });
-    }
+//       return res.status(502).json({
+//         success: false,
+//         message: "Prometheus returned an unsuccessful query.",
+//       });
+//     }
 
-    return res.status(200).json({
-      success: true,
-      metric: metricKey,
-      start,
-      end,
-      step,
-      resultType: prometheusData.data?.resultType ?? "matrix",
-      result: prometheusData.data?.result ?? [],
-    });
-  } catch (error) {
-    logger.error(
-      "Failed to retrieve historical fleet metrics",
-      error,
-    );
+//     return res.status(200).json({
+//       success: true,
+//       metric: metricKey,
+//       start,
+//       end,
+//       step,
+//       resultType: prometheusData.data?.resultType ?? "matrix",
+//       result: prometheusData.data?.result ?? [],
+//     });
+//   } catch (error) {
+//     logger.error(
+//       "Failed to retrieve historical fleet metrics",
+//       error,
+//     );
 
-    return res.status(500).json({
-      success: false,
-      message: "Failed to retrieve historical fleet metrics.",
-    });
-  }
-});
+//     return res.status(500).json({
+//       success: false,
+//       message: "Failed to retrieve historical fleet metrics.",
+//     });
+//   }
+// });
 
 // --------------------------------------------------
 // NODE REGISTRATION

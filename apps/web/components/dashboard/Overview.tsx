@@ -325,22 +325,42 @@ function MetricCard({
   icon: Icon,
   tone,
 }: any) {
+  const isRed = tone === "red";
+
   return (
-    <article className={`overview-metric ${tone}`}>
+    <article
+      className={`overview-metric ${isRed
+          ? "!border-red-200 !bg-red-50"
+          : "!border-green-200 !bg-green-50"
+        }`}
+    >
       <div className="metric-top">
         <span>{title}</span>
 
-        <span className="metric-icon-small">
+        <span
+          className={`metric-icon-small ${isRed
+              ? "!bg-red-100 !text-red-600"
+              : "!bg-green-100 !text-green-600"
+            }`}
+        >
           <Icon size={17} />
         </span>
       </div>
 
-      <strong>{value}</strong>
+      <strong
+        className={
+          isRed
+            ? "!text-red-600"
+            : "!text-green-600"
+        }
+      >
+        {value}
+      </strong>
+
       <small>{detail}</small>
     </article>
   );
 }
-
 /* RESOURCE METRIC */
 
 function ResourceMetric({
@@ -357,8 +377,10 @@ function ResourceMetric({
   );
 
   return (
+
     <div className="fleet-resource-card">
       <div className="fleet-resource-heading">
+
         <span>
           <Icon size={15} />
           {title}
@@ -495,9 +517,8 @@ function NodeCard({
         </div>
 
         <div
-          className={`fleet-node-status ${
-            online ? "online" : "offline"
-          }`}
+          className={`fleet-node-status ${online ? "online" : "offline"
+            }`}
         >
           {online ? <Wifi size={14} /> : <WifiOff size={14} />}
           {online ? "Online" : "Offline"}
@@ -622,9 +643,8 @@ function NodeCard({
       <div className="fleet-node-footer">
         <span>
           <span
-            className={`fleet-status-dot ${
-              online ? "online" : "offline"
-            }`}
+            className={`fleet-status-dot ${online ? "online" : "offline"
+              }`}
           />
 
           {online
@@ -685,32 +705,32 @@ function UserOverview() {
 
   const averageCpu = nodes.length
     ? nodes.reduce(
-        (sum: number, node: FleetNode) =>
-          sum +
-          readNumber(node, [
-            "cpuUsagePercent",
-            "cpu_usage_percent",
-          ]),
-        0
-      ) / nodes.length
+      (sum: number, node: FleetNode) =>
+        sum +
+        readNumber(node, [
+          "cpuUsagePercent",
+          "cpu_usage_percent",
+        ]),
+      0
+    ) / nodes.length
     : 0;
 
   const averageMemory = nodes.length
     ? nodes.reduce((sum: number, node: FleetNode) => {
-        const used = readNumber(node, [
-          "memoryUsedMB",
-          "memoryUsedMb",
-          "memory_used_mb",
-        ]);
+      const used = readNumber(node, [
+        "memoryUsedMB",
+        "memoryUsedMb",
+        "memory_used_mb",
+      ]);
 
-        const total = readNumber(node, [
-          "memoryTotalMB",
-          "memoryTotalMb",
-          "memory_total_mb",
-        ]);
+      const total = readNumber(node, [
+        "memoryTotalMB",
+        "memoryTotalMb",
+        "memory_total_mb",
+      ]);
 
-        return sum + getPercentage(used, total);
-      }, 0) / nodes.length
+      return sum + getPercentage(used, total);
+    }, 0) / nodes.length
     : 0;
 
   const batteryNodes = nodes.filter(
@@ -719,10 +739,10 @@ function UserOverview() {
 
   const averageBattery = batteryNodes.length
     ? batteryNodes.reduce(
-        (sum: number, node: FleetNode) =>
-          sum + (getBatteryPercentage(node) ?? 0),
-        0
-      ) / batteryNodes.length
+      (sum: number, node: FleetNode) =>
+        sum + (getBatteryPercentage(node) ?? 0),
+      0
+    ) / batteryNodes.length
     : null;
 
   async function handleRefresh() {
@@ -840,7 +860,6 @@ function UserOverview() {
               icon={Monitor}
               tone="blue"
             />
-
             <MetricCard
               title="Online nodes"
               value={onlineNodes.length}
@@ -852,9 +871,9 @@ function UserOverview() {
             <MetricCard
               title="Offline nodes"
               value={offlineNodes}
-              detail="Not recently reporting"
+              detail="Not currently reporting"
               icon={WifiOff}
-              tone="orange"
+              tone={offlineNodes > 0 ? "red" : "green"}
             />
 
             <MetricCard
@@ -971,7 +990,7 @@ export default function Overview() {
       <div className="page-loading">
         <span className="loader-ring" />
         <p>Loading dashboard...</p>
-      </div> 
+      </div>
     );
   }
 

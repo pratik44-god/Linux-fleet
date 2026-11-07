@@ -443,3 +443,19 @@ button,input{font:inherit}button{color:inherit;cursor:pointer}a{color:inherit;te
 @media(max-width:850px){.lf-chart-grid{grid-template-columns:1fr}.lf-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:560px){.lf-chart-item{grid-template-columns:90px minmax(0,1fr);gap:9px}.lf-chart-list{padding:14px}.lf-detail-grid{grid-template-columns:1fr}.lf-history-note{padding:13px}.lf-history-note p{font-size:9px}}
 
+
+
+/* Online status */
+.overview-metric.green {
+  color: #22c55e;
+}
+
+/* Offline status */
+.overview-metric.red {
+  color: #ef4444;
+}
+
+.overview-metric.red .metric-icon-small {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+}
