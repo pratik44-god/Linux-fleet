@@ -30,6 +30,14 @@ jobs:
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Verify Azure subscription and ACR
+        run: |
+          echo "Authenticated Azure account:"
+          az account show --query "{name:name, subscriptionId:id, tenantId:tenantId}" -o json
+
+          echo "Available registries:"
+          az acr list --query "[].{name:name, resourceGroup:resourceGroup, loginServer:loginServer}" -o table
+
       - name: Login to Azure Container Registry
         run: |
           az acr login --name "$ACR_NAME"
