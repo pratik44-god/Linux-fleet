@@ -45,7 +45,8 @@ jobs:
           docker push "$ACR_LOGIN_SERVER/linuxfleet-api:${GITHUB_SHA}"
           docker push "$ACR_LOGIN_SERVER/linuxfleet-api:latest"
 
-      - name: Build and push frontend image
+        - name: Build and push frontend image
+        if: ${{ vars.NEXT_PUBLIC_API_URL != '' }}
         run: |
           docker build \
             -f Dockerfile.frontend \
