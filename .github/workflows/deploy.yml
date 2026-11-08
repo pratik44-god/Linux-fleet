@@ -1,0 +1,57 @@
+
+name: LinuxFleet CI/CD
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  ACR_NAME: linuxfleetacr
+
+jobs:
+  build-and-push:
+    name: Build and Push Docker Images
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Login to Azure using OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Login to Azure Container Registry
+        run: |
+          az acr login --name "$ACR_NAME"
+          echo "ACR_LOGIN_SERVER=$(az acr show --name "$ACR_NAME" --query loginServer -o tsv)" >> "$GITHUB_ENV"
+
+      - name: Build and push backend image
+        run: |
+          docker build \
+            -f Dockerfile.backend \
+            -t "$ACR_LOGIN_SERVER/linuxfleet-api:${GITHUB_SHA}" \
+            -t "$ACR_LOGIN_SERVER/linuxfleet-api:latest" \
+            .
+          docker push "$ACR_LOGIN_SERVER/linuxfleet-api:${GITHUB_SHA}"
+          docker push "$ACR_LOGIN_SERVER/linuxfleet-api:latest"
+
+      - name: Build and push frontend image
+        run: |
+          docker build \
+            -f Dockerfile.frontend \
+            --build-arg NEXT_PUBLIC_API_URL="${{ vars.NEXT_PUBLIC_API_URL }}" \
+            -t "$ACR_LOGIN_SERVER/linuxfleet-frontend:${GITHUB_SHA}" \
+            -t "$ACR_LOGIN_SERVER/linuxfleet-frontend:latest" \
+            .
+          docker push "$ACR_LOGIN_SERVER/linuxfleet-frontend:${GITHUB_SHA}"
+          docker push "$ACR_LOGIN_SERVER/linuxfleet-frontend:latest"
