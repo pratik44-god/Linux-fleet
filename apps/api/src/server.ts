@@ -62,14 +62,13 @@ const openApiDocument = generateOpenApiDocument(serverRouter, {
 });
 
 // Middleware
-if (env.NODE_ENV !== "prod") {
-  app.use(
-    cors({
-      origin: WEB_APP_URL,
-      credentials: true,
-    }),
-  );
-}
+// CORS CONFIGURATION
+app.use(
+  cors({
+    origin: WEB_APP_URL,
+    credentials: true,
+  }),
+);
 
 app.use(express.json({ limit: "10mb" }));
 app.use(cookieParser());
