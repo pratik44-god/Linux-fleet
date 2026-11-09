@@ -1,5 +1,6 @@
 global:
   scrape_interval: 15s
+  evaluation_interval: 15s
 
 scrape_configs:
   - job_name: "prometheus"
@@ -7,6 +8,8 @@ scrape_configs:
       - targets: ["prometheus:9090"]
 
   - job_name: "linux-fleet-api"
+    scheme: https
     metrics_path: /metrics
+    scrape_interval: 15s
     static_configs:
-      - targets: ["host.docker.internal:8000"]
+      - targets: ["api.its-pratik.dev:443"]

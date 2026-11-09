@@ -1,4 +1,71 @@
 
+# name: LinuxFleet CI/CD
+
+# on:
+#   push:
+#     branches:
+#       - main
+#   workflow_dispatch:
+
+# permissions:
+#   id-token: write
+#   contents: read
+
+# env:
+#   ACR_NAME: linuxfleetacr
+
+# jobs:
+#   build-and-push:
+#     name: Build and Push Docker Images
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v4
+
+#       - name: Login to Azure using OIDC
+#         uses: azure/login@v2
+#         with:
+#           client-id: ${{ vars.AZURE_CLIENT_ID }}
+#           tenant-id: ${{ vars.AZURE_TENANT_ID }}
+#           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+#       - name: Verify Azure subscription and ACR
+#         run: |
+#           echo "Authenticated Azure account:"
+#           az account show --query "{name:name, subscriptionId:id, tenantId:tenantId}" -o json
+
+#           echo "Available registries:"
+#           az acr list --query "[].{name:name, resourceGroup:resourceGroup, loginServer:loginServer}" -o table
+
+#       - name: Login to Azure Container Registry
+#         run: |
+#           az acr login --name "$ACR_NAME"
+#           echo "ACR_LOGIN_SERVER=$(az acr show --name "$ACR_NAME" --query loginServer -o tsv)" >> "$GITHUB_ENV"
+
+#       - name: Build and push backend image
+#         run: |
+#           docker build \
+#             -f Dockerfile.backend \
+#             -t "$ACR_LOGIN_SERVER/linuxfleet-api:${GITHUB_SHA}" \
+#             -t "$ACR_LOGIN_SERVER/linuxfleet-api:latest" \
+#             .
+#           docker push "$ACR_LOGIN_SERVER/linuxfleet-api:${GITHUB_SHA}"
+#           docker push "$ACR_LOGIN_SERVER/linuxfleet-api:latest"
+
+#       - name: Build and push frontend image
+#         if: ${{ vars.NEXT_PUBLIC_API_URL != '' }}
+#         run: |
+#           docker build \
+#             -f Dockerfile.frontend \
+#             --build-arg NEXT_PUBLIC_API_URL="${{ vars.NEXT_PUBLIC_API_URL }}" \
+#             -t "$ACR_LOGIN_SERVER/linuxfleet-frontend:${GITHUB_SHA}" \
+#             -t "$ACR_LOGIN_SERVER/linuxfleet-frontend:latest" \
+#             .
+#           docker push "$ACR_LOGIN_SERVER/linuxfleet-frontend:${GITHUB_SHA}"
+#           docker push "$ACR_LOGIN_SERVER/linuxfleet-frontend:latest"
+
+
 name: LinuxFleet CI/CD
 
 on:
@@ -12,17 +79,22 @@ permissions:
   contents: read
 
 env:
-  ACR_NAME: linuxfleetacr
+  ACR_NAME: linuxfleetacr-a3hvemfsewatd5b9
+  RESOURCE_GROUP: linuxfleet-rg
+  BACKEND_APP: linuxfleet-api
+  FRONTEND_APP: linuxfleet-web
 
 jobs:
-  build-and-push:
-    name: Build and Push Docker Images
+  build-and-deploy:
+    name: Build, Push and Deploy LinuxFleet
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Checkout source code
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 2. Azure authentication using OIDC
       - name: Login to Azure using OIDC
         uses: azure/login@v2
         with:
@@ -30,19 +102,45 @@ jobs:
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Verify Azure subscription and ACR
+      # 3. Install Container Apps extension
+      - name: Setup Azure Container Apps CLI
         run: |
-          echo "Authenticated Azure account:"
-          az account show --query "{name:name, subscriptionId:id, tenantId:tenantId}" -o json
+          az extension add --name containerapp --upgrade
 
-          echo "Available registries:"
-          az acr list --query "[].{name:name, resourceGroup:resourceGroup, loginServer:loginServer}" -o table
+      # 4. Verify Azure resources
+      - name: Verify Azure resources
+        run: |
+          echo "Azure account:"
+          az account show --query "{name:name, subscriptionId:id}" -o table
 
+          echo "Container Registry:"
+          az acr show \
+            --name "$ACR_NAME" \
+            --resource-group "$RESOURCE_GROUP" \
+            --query "{name:name, loginServer:loginServer}" \
+            -o table
+
+          echo "Container Apps:"
+          az containerapp show \
+            --name "$BACKEND_APP" \
+            --resource-group "$RESOURCE_GROUP" \
+            --query "name" -o tsv
+
+          az containerapp show \
+            --name "$FRONTEND_APP" \
+            --resource-group "$RESOURCE_GROUP" \
+            --query "name" -o tsv
+
+      # 5. Login to ACR
       - name: Login to Azure Container Registry
         run: |
           az acr login --name "$ACR_NAME"
-          echo "ACR_LOGIN_SERVER=$(az acr show --name "$ACR_NAME" --query loginServer -o tsv)" >> "$GITHUB_ENV"
 
+          echo "ACR_LOGIN_SERVER=$(az acr show \
+            --name "$ACR_NAME" \
+            --query loginServer -o tsv)" >> "$GITHUB_ENV"
+
+      # 6. Build and push backend
       - name: Build and push backend image
         run: |
           docker build \
@@ -50,9 +148,11 @@ jobs:
             -t "$ACR_LOGIN_SERVER/linuxfleet-api:${GITHUB_SHA}" \
             -t "$ACR_LOGIN_SERVER/linuxfleet-api:latest" \
             .
+
           docker push "$ACR_LOGIN_SERVER/linuxfleet-api:${GITHUB_SHA}"
           docker push "$ACR_LOGIN_SERVER/linuxfleet-api:latest"
 
+      # 7. Build and push frontend
       - name: Build and push frontend image
         if: ${{ vars.NEXT_PUBLIC_API_URL != '' }}
         run: |
@@ -62,5 +162,42 @@ jobs:
             -t "$ACR_LOGIN_SERVER/linuxfleet-frontend:${GITHUB_SHA}" \
             -t "$ACR_LOGIN_SERVER/linuxfleet-frontend:latest" \
             .
+
           docker push "$ACR_LOGIN_SERVER/linuxfleet-frontend:${GITHUB_SHA}"
           docker push "$ACR_LOGIN_SERVER/linuxfleet-frontend:latest"
+
+      # 8. Deploy backend to Azure
+      - name: Deploy backend Container App
+        run: |
+          az containerapp update \
+            --name "$BACKEND_APP" \
+            --resource-group "$RESOURCE_GROUP" \
+            --image "$ACR_LOGIN_SERVER/linuxfleet-api:${GITHUB_SHA}"
+
+      # 9. Deploy frontend to Azure
+      - name: Deploy frontend Container App
+        if: ${{ vars.NEXT_PUBLIC_API_URL != '' }}
+        run: |
+          az containerapp update \
+            --name "$FRONTEND_APP" \
+            --resource-group "$RESOURCE_GROUP" \
+            --image "$ACR_LOGIN_SERVER/linuxfleet-frontend:${GITHUB_SHA}"
+
+      # 10. Deployment verification
+      - name: Verify deployment
+        run: |
+          echo "Backend revision:"
+          az containerapp show \
+            --name "$BACKEND_APP" \
+            --resource-group "$RESOURCE_GROUP" \
+            --query "properties.latestRevisionName" \
+            -o tsv
+
+          echo "Frontend revision:"
+          az containerapp show \
+            --name "$FRONTEND_APP" \
+            --resource-group "$RESOURCE_GROUP" \
+            --query "properties.latestRevisionName" \
+            -o tsv
+
+          echo "LinuxFleet deployment completed."

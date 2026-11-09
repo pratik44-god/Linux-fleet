@@ -110,9 +110,12 @@ export default function AdminOverview() {
   /**
    * Resolve the node ID used by the monitoring panel.
    */
-  const getNodeId = (node: AdminNode): string =>
-    String(node.nodeId ?? node.id ?? "");
+  // const getNodeId = (node: AdminNode): string =>
+  //   String(node.nodeId ?? node.id ?? "");
 
+  const getNodeId = (node: AdminNode): string =>
+  String(node.nodeId ?? "").trim();
+  
   /**
    * Determine whether a node is online.
    */
