@@ -1,3 +1,4 @@
+
 name: LinuxFleet CI/CD
 
 on:
@@ -100,10 +101,11 @@ jobs:
           docker push "$ACR_LOGIN_SERVER/linuxfleet-api:${GITHUB_SHA}"
           docker push "$ACR_LOGIN_SERVER/linuxfleet-api:latest"
 
-      # 7. Validate and normalize frontend API URL
+      # 7. Validate and normalize frontend configuration
       - name: Validate frontend configuration
         env:
           NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_GRAFANA_URL: ${{ vars.NEXT_PUBLIC_GRAFANA_URL }}
         run: |
           set -euo pipefail
 
@@ -112,22 +114,32 @@ jobs:
             exit 1
           fi
 
+          if [ -z "$NEXT_PUBLIC_GRAFANA_URL" ]; then
+            echo "ERROR: NEXT_PUBLIC_GRAFANA_URL is not configured."
+            exit 1
+          fi
+
           # Remove leading and trailing whitespace
           NEXT_PUBLIC_API_URL="$(printf '%s' "$NEXT_PUBLIC_API_URL" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')"
+          NEXT_PUBLIC_GRAFANA_URL="$(printf '%s' "$NEXT_PUBLIC_GRAFANA_URL" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')"
 
           EXPECTED_API_URL="https://api.its-pratik.dev/trpc"
+          EXPECTED_GRAFANA_URL="https://grafana.its-pratik.dev"
 
           if [ "$NEXT_PUBLIC_API_URL" != "$EXPECTED_API_URL" ]; then
             echo "ERROR: NEXT_PUBLIC_API_URL does not match the expected production URL."
-            echo "Expected: $EXPECTED_API_URL"
-            echo "Received: [$NEXT_PUBLIC_API_URL]"
+            exit 1
+          fi
+
+          if [ "$NEXT_PUBLIC_GRAFANA_URL" != "$EXPECTED_GRAFANA_URL" ]; then
+            echo "ERROR: NEXT_PUBLIC_GRAFANA_URL does not match the expected Grafana URL."
             exit 1
           fi
 
           echo "NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL" >> "$GITHUB_ENV"
+          echo "NEXT_PUBLIC_GRAFANA_URL=$NEXT_PUBLIC_GRAFANA_URL" >> "$GITHUB_ENV"
 
-          echo "Frontend API URL validated successfully:"
-          echo "$NEXT_PUBLIC_API_URL"
+          echo "Frontend API and Grafana URLs validated successfully."
 
       # 8. Build and push frontend image
       - name: Build and push frontend image
@@ -136,10 +148,12 @@ jobs:
 
           echo "Building frontend image..."
           echo "Using API URL: $NEXT_PUBLIC_API_URL"
+          echo "Using Grafana URL: $NEXT_PUBLIC_GRAFANA_URL"
 
           docker build \
             -f Dockerfile.frontend \
             --build-arg NEXT_PUBLIC_API_URL="$NEXT_PUBLIC_API_URL" \
+            --build-arg NEXT_PUBLIC_GRAFANA_URL="$NEXT_PUBLIC_GRAFANA_URL" \
             -t "$ACR_LOGIN_SERVER/linuxfleet-frontend:${GITHUB_SHA}" \
             -t "$ACR_LOGIN_SERVER/linuxfleet-frontend:latest" \
             .
