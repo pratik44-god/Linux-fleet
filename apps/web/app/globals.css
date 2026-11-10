@@ -469,3 +469,16 @@ button,input{font:inherit}button{color:inherit;cursor:pointer}a{color:inherit;te
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+/* Hide the scrollbar across the entire application */
+html,
+body {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
