@@ -46,6 +46,10 @@ const setupSteps = [
     title: "Stop the agent",
     command: "./fleet stop",
   },
+  {
+    title: "Remove the agent",
+    command: "./fleet remove"
+  }
 ];
 
 function getTokenFromResult(result: unknown): string | null {
