@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import {
   Activity,
@@ -18,28 +19,76 @@ export default function LoginPage() {
   const { isUserLoggedIn } = useIsUserLoggedIn();
   const { getGoogleAuthUrlAsync, isError, error } = useLogin();
 
+  const authUrlRef = useRef<string | null>(null);
+  const authUrlPromiseRef = useRef<Promise<string | null> | null>(null);
+
+  function extractAuthUrl(result: any): string | null {
+    if (typeof result === "string") {
+      return result;
+    }
+
+    return (
+      result?.url ??
+      result?.authUrl ??
+      result?.redirectUrl ??
+      null
+    );
+  }
+
+  function prefetchGoogleAuthUrl(): Promise<string | null> {
+    if (authUrlRef.current) {
+      return Promise.resolve(authUrlRef.current);
+    }
+
+    if (!authUrlPromiseRef.current) {
+      authUrlPromiseRef.current = getGoogleAuthUrlAsync()
+        .then((result: any) => {
+          const url = extractAuthUrl(result);
+
+          if (url) {
+            authUrlRef.current = url;
+          }
+
+          return url;
+        })
+        .catch(() => null)
+        .finally(() => {
+          authUrlPromiseRef.current = null;
+        });
+    }
+
+    return authUrlPromiseRef.current;
+  }
+
   useEffect(() => {
     if (isUserLoggedIn) {
       window.location.replace("/dashboard");
+      return;
     }
+
+    void prefetchGoogleAuthUrl();
   }, [isUserLoggedIn]);
 
   async function handleGoogleLogin() {
     try {
-      const result: any = await getGoogleAuthUrlAsync();
-
       const url =
-        typeof result === "string"
-          ? result
-          : result?.url ??
-            result?.authUrl ??
-            result?.redirectUrl;
+        authUrlRef.current ??
+        await prefetchGoogleAuthUrl();
 
       if (url) {
         window.location.assign(url);
+        return;
       }
-    } catch {
-      // The existing error message is displayed through the login hook.
+
+      // Retry once if the initial prefetch failed.
+      const retryResult = await getGoogleAuthUrlAsync();
+      const retryUrl = extractAuthUrl(retryResult);
+
+      if (retryUrl) {
+        window.location.assign(retryUrl);
+      }
+    } catch (err) {
+      console.error("Google login failed:", err);
     }
   }
 
