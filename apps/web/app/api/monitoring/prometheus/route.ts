@@ -1,5 +1,5 @@
 const PROMETHEUS_URL =
-  process.env.PROMETHEUS_URL || "http://localhost:9090";
+  process.env.PROMETHEUS_URL ?? "https://linuxfleet-prometheus.internal.thankfultree-46fa2ae1.uaenorth.azurecontainerapps.io";
 
 export const dynamic = "force-dynamic";
 

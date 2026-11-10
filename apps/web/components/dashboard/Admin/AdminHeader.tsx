@@ -6,3 +6,4 @@ export default function AdminHeader({ onRefresh, refreshing }: { onRefresh: () =
     <button type="button" onClick={onRefresh} disabled={refreshing} className="flex items-center justify-center gap-2 rounded-lg border border-[#263c55] bg-[#0c1b2d] px-4 py-2 text-sm transition hover:bg-[#142943] disabled:opacity-50"><RefreshCw size={15} className={refreshing ? "animate-spin" : ""}/>Refresh data</button>
   </header>;
 }
+ 

@@ -36,10 +36,10 @@ import {
 } from "./monitoring/prometheus";
 
 const WEB_APP_URL =
-  process.env.WEB_APP_URL ?? "http://localhost:3000";
+  process.env.WEB_APP_URL ?? "https://linuxfleet.its-pratik.dev"
 
 const PROMETHEUS_URL =
-  process.env.PROMETHEUS_URL ?? "http://localhost:9090";
+  process.env.PROMETHEUS_URL ?? "https://linuxfleet-prometheus.internal.thankfultree-46fa2ae1.uaenorth.azurecontainerapps.io";
 
 const PROMETHEUS_RANGE_SECONDS = 30 * 60;
 const PROMETHEUS_STEP_SECONDS = 15;
