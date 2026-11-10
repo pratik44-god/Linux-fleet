@@ -25,11 +25,13 @@ export default function UserMonitoringPanel({
   getNodeId,
   isOnline,
 }: UserMonitoringPanelProps) {
-  const grafanaUrl = process.env.NEXT_PUBLIC_GRAFANA_URL || "https://linuxfleet-grafana.thankfultree-46fa2ae1.uaenorth.azurecontainerapps.io";
- 
- 
+  const grafanaUrl =
+    process.env.NEXT_PUBLIC_GRAFANA_URL ||
+    "https://grafana.its-pratik.dev";
+
   const dashboardUid =
-    process.env.NEXT_PUBLIC_GRAFANA_DASHBOARD_UID || "linux-fleet-node";
+    process.env.NEXT_PUBLIC_GRAFANA_DASHBOARD_UID ||
+    "linux-fleet-node";
 
   const userId = String(user.id ?? "").trim();
 
@@ -46,10 +48,12 @@ export default function UserMonitoringPanel({
     url.searchParams.set("from", "now-1h");
     url.searchParams.set("to", "now");
     url.searchParams.set("refresh", "15s");
-    url.searchParams.set("var-userId", userId);
+
+    // Match the exact Grafana variable names.
+    url.searchParams.set("var-userid", userId);
 
     if (nodeId) {
-      url.searchParams.set("var-node", nodeId);
+      url.searchParams.set("var-nodeid", nodeId);
     }
 
     return url.toString();
