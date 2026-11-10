@@ -459,3 +459,13 @@ button,input{font:inherit}button{color:inherit;cursor:pointer}a{color:inherit;te
   color: #ef4444;
   background: rgba(239, 68, 68, 0.12);
 }
+
+/* Hide scrollbar but preserve scrolling */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

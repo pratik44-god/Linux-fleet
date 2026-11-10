@@ -766,7 +766,7 @@ function UserOverview() {
   }
 
   return (
-    <div className="dashboard-content">
+    <div className="dashboard-content scrollbar-hide">
       <div className="page-title-row">
         <div>
           <div className="eyebrow">WORKSPACE OVERVIEW</div>
