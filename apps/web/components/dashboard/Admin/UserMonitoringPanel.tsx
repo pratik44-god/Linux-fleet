@@ -25,9 +25,9 @@ export default function UserMonitoringPanel({
   getNodeId,
   isOnline,
 }: UserMonitoringPanelProps) {
-  const grafanaUrl =
-    process.env.NEXT_PUBLIC_GRAFANA_URL || "http://localhost:3001";
-
+  const grafanaUrl = process.env.NEXT_PUBLIC_GRAFANA_URL || "https://linuxfleet-grafana.thankfultree-46fa2ae1.uaenorth.azurecontainerapps.io";
+ 
+ 
   const dashboardUid =
     process.env.NEXT_PUBLIC_GRAFANA_DASHBOARD_UID || "linux-fleet-node";
 

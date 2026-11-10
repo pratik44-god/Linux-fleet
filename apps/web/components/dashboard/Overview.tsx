@@ -36,7 +36,7 @@ const ONLINE_THRESHOLD = 45_000;
 /* GRAFANA CONFIGURATION */
 
 const GRAFANA_URL =
-  process.env.NEXT_PUBLIC_GRAFANA_URL ?? "http://localhost:3001";
+  process.env.NEXT_PUBLIC_GRAFANA_URL ?? "https://linuxfleet-grafana.thankfultree-46fa2ae1.uaenorth.azurecontainerapps.io";
 
 const GRAFANA_DASHBOARD_UID =
   process.env.NEXT_PUBLIC_GRAFANA_DASHBOARD_UID ??
