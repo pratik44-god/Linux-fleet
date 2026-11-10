@@ -30,7 +30,7 @@ export default function AdminStats({
       icon: Wifi,
     },
     {
-      label: "Offline nodes",
+      label: "Of fline nodes",
       value: offline,
       icon: WifiOff,
     },

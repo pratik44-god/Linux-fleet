@@ -949,13 +949,6 @@ function UserOverview() {
                 for detailed investigation.
               </p>
             </div>
-
-            <Link
-              href="/dashboard/monitoring"
-              className="button button-secondary"
-            >
-              Open monitoring <ArrowRight size={15} />
-            </Link>
           </div>
         </>
       )}
