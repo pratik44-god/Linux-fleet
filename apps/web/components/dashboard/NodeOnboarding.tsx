@@ -48,8 +48,9 @@ const setupSteps = [
   },
   {
     title: "Remove the agent",
-    command: "./fleet remove"
-  }
+    command: "./fleet remove",
+    note: "Removes the LinuxFleet agent from this machine.",
+  },
 ];
 
 function getTokenFromResult(result: unknown): string | null {
@@ -63,14 +64,10 @@ function getTokenFromResult(result: unknown): string | null {
 
   const value = result as Record<string, unknown>;
 
-  if (typeof value.token === "string") {
-    return value.token;
-  }
-
+  if (typeof value.token === "string") return value.token;
   if (typeof value.registrationToken === "string") {
     return value.registrationToken;
   }
-
   if (typeof value.registration_token === "string") {
     return value.registration_token;
   }
@@ -97,20 +94,14 @@ export default function NodeOnboarding({
   const [copied, setCopied] = useState<string | null>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
 
-  const {
-    token,
-    generateTokenAsync,
-    isPending,
-  } = useTokenGeneration();
+  const { token, generateTokenAsync, isPending } = useTokenGeneration();
 
-  // Restore a previously generated token when the modal is reopened.
+  // Restore a previously generated token.
   useEffect(() => {
     const savedToken = sessionStorage.getItem(STORAGE_KEY);
     const savedExpiry = sessionStorage.getItem(EXPIRY_STORAGE_KEY);
 
-    if (!savedToken || !savedExpiry) {
-      return;
-    }
+    if (!savedToken || !savedExpiry) return;
 
     const expiry = Number(savedExpiry);
 
@@ -125,11 +116,9 @@ export default function NodeOnboarding({
     setStep("token");
   }, []);
 
-  // Support hooks that expose the generated token through their token state.
+  // Handle tokens exposed through hook state.
   useEffect(() => {
-    if (!token) {
-      return;
-    }
+    if (!token) return;
 
     const expiresAt = Date.now() + TOKEN_VALIDITY_MS;
 
@@ -142,8 +131,7 @@ export default function NodeOnboarding({
     setStep("token");
   }, [token]);
 
-  // Update the visible countdown and clear the token from session storage
-  // when its 10-minute validity period has elapsed.
+  // Countdown and token expiration.
   useEffect(() => {
     if (!tokenExpiresAt) {
       setRemainingSeconds(null);
@@ -186,13 +174,12 @@ export default function NodeOnboarding({
 
         setRegistrationToken(generatedToken);
         setTokenExpiresAt(expiresAt);
+
         sessionStorage.setItem(STORAGE_KEY, generatedToken);
         sessionStorage.setItem(EXPIRY_STORAGE_KEY, String(expiresAt));
+
         setStep("token");
       }
-
-      // If the hook updates its `token` state instead of returning it,
-      // the token effect above will handle displaying the setup steps.
     } catch (error) {
       console.error("Failed to generate registration token", error);
       setGenerationError("Token generation failed. Please try again.");
@@ -227,6 +214,7 @@ export default function NodeOnboarding({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm">
       <div className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950">
+
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4 sm:px-6 dark:border-slate-800">
           <div className="flex min-w-0 items-center gap-3">
@@ -254,8 +242,8 @@ export default function NodeOnboarding({
           </button>
         </div>
 
-        {/* Content */}
-        <div className="overflow-y-auto p-5 sm:p-6">
+        {/* Scrollable Content */}
+        <div className="onboarding-scrollbar overflow-y-auto p-5 sm:p-6">
           {step === "intro" && (
             <div className="space-y-6">
               <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 sm:p-5 dark:border-blue-900 dark:bg-blue-950/40">
@@ -331,7 +319,7 @@ export default function NodeOnboarding({
 
           {step === "token" && registrationToken && !tokenIsExpired && (
             <div className="space-y-6">
-              {/* Generated token */}
+              {/* Generated Token */}
               <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 sm:p-5 dark:border-emerald-900 dark:bg-emerald-950/30">
                 <div className="mb-3 flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
                   <Check size={20} />
@@ -351,17 +339,12 @@ export default function NodeOnboarding({
 
                   <button
                     type="button"
-                    onClick={() =>
-                      handleCopy(registrationToken, "token")
-                    }
+                    onClick={() => handleCopy(registrationToken, "token")}
                     className="shrink-0 rounded-md p-2 text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:hover:bg-slate-800 dark:hover:text-white"
                     aria-label="Copy registration token"
                   >
                     {copied === "token" ? (
-                      <Check
-                        size={16}
-                        className="text-emerald-600 dark:text-emerald-400"
-                      />
+                      <Check size={16} className="text-emerald-600 dark:text-emerald-400" />
                     ) : (
                       <Copy size={16} />
                     )}
@@ -387,13 +370,10 @@ export default function NodeOnboarding({
                 </div>
               </div>
 
-              {/* Setup commands */}
+              {/* Setup Commands */}
               <div>
                 <div className="mb-4 flex items-center gap-2">
-                  <Terminal
-                    size={18}
-                    className="text-slate-500 dark:text-slate-400"
-                  />
+                  <Terminal size={18} className="text-slate-500 dark:text-slate-400" />
                   <h3 className="font-semibold text-slate-900 dark:text-white">
                     Install and register your node
                   </h3>
@@ -425,10 +405,7 @@ export default function NodeOnboarding({
                             aria-label={`Copy ${item.title} command`}
                           >
                             {copied === `command-${index}` ? (
-                              <Check
-                                size={15}
-                                className="text-emerald-400"
-                              />
+                              <Check size={15} className="text-emerald-400" />
                             ) : (
                               <Copy size={15} />
                             )}
@@ -446,7 +423,7 @@ export default function NodeOnboarding({
                 </div>
               </div>
 
-              {/* Footer actions */}
+              {/* Footer Actions */}
               <div className="flex flex-col gap-3 border-t border-slate-200 pt-5 sm:flex-row dark:border-slate-800">
                 <button
                   type="button"
@@ -469,6 +446,43 @@ export default function NodeOnboarding({
           )}
         </div>
       </div>
+
+      {/* Theme-aware scrollbar */}
+      <style jsx global>{`
+        .onboarding-scrollbar {
+          scrollbar-width: thin;
+          scrollbar-color: #cbd5e1 transparent;
+        }
+
+        .onboarding-scrollbar::-webkit-scrollbar {
+          width: 7px;
+        }
+
+        .onboarding-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+
+        .onboarding-scrollbar::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 999px;
+        }
+
+        .onboarding-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #94a3b8;
+        }
+
+        :global(.dark) .onboarding-scrollbar {
+          scrollbar-color: #475569 transparent;
+        }
+
+        :global(.dark) .onboarding-scrollbar::-webkit-scrollbar-thumb {
+          background: #475569;
+        }
+
+        :global(.dark) .onboarding-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #64748b;
+        }
+      `}</style>
     </div>
   );
 }
